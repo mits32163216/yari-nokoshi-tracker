@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>やり残し台帳 v4｜西田光弘</title>
+<meta name="theme-color" content="#b5562f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe4; --card:#fbf8f1; --ink:#2c2620; --soft:#6f665a; --line:#e3dac9;
+    --aka:#b5562f; --daidai:#bd8a2c; --kihada:#c9a64b;
+    --green:#4f6f52; --terra:#b5562f; --ochre:#bd8a2c; --murasaki:#6e3f5f; --kon:#3f4f7a;
+    --fa:#3f4f7a; --fs:#4f6f52; --ba:#bd8a2c; --bs:#6e3f5f;
+    --aka-bg:rgba(181,86,47,.08); --daidai-bg:rgba(189,138,44,.08); --kihada-bg:rgba(201,166,75,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Zen Kaku Gothic New',sans-serif; font-size:15px; line-height:1.55;
+    background-image:radial-gradient(rgba(0,0,0,.012) 1px, transparent 1px),radial-gradient(rgba(0,0,0,.012) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px;
+    background-position: 0 0, 12px 12px;
+  }
+  button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:transparent;}
+  .app{max-width:820px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;}
+
+  header.top{
+    position:sticky;top:0;z-index:20;
+    background:var(--card);border-bottom:1px solid var(--line);
+    padding:14px 20px 14px;
+  }
+  header.top::before{
+    content:"";position:absolute;left:0;top:0;right:0;height:5px;
+    background:linear-gradient(90deg,var(--aka) 0 33%,var(--daidai) 33% 67%,var(--kihada) 67% 100%);
+  }
+  .head-text h1{
+    font-family:'Shippori Mincho',serif;font-weight:800;font-size:22px;margin:2px 0 4px;letter-spacing:.04em;
+  }
+  .kicker{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--terra);font-weight:700;}
+  .head-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--soft);}
+  .head-meta b{color:var(--ink);font-weight:700;}
+
+  .tabs{
+    display:flex;gap:0;margin:14px 20px 0;border-bottom:1px solid var(--line);
+    overflow-x:auto;
+  }
+  .tab{
+    padding:10px 16px;font-size:13px;font-weight:700;color:var(--soft);
+    border-bottom:2px solid transparent;white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .tab.active{color:var(--ink);border-bottom-color:var(--terra);}
+  .tab .c{font-size:11px;color:var(--soft);margin-left:4px;}
+  .tab.active .c{color:var(--terra);}
+
+  main{flex:1;padding:18px 20px 96px;}
+  .cards{display:flex;flex-direction:column;gap:14px;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-left-width:5px;border-radius:10px;
+    padding:16px 18px;position:relative;
+    transition:transform .18s ease, opacity .25s ease, box-shadow .18s ease;
+    box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  .card:hover{box-shadow:0 4px 12px rgba(0,0,0,.04);}
+  .card.aka{border-left-color:var(--aka);}
+  .card.daidai{border-left-color:var(--daidai);}
+  .card.kihada{border-left-color:var(--kihada);}
+
+  .session-head{
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    padding-bottom:10px;margin-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .session-name{
+    font-family:'Shippori Mincho',serif;font-weight:800;font-size:18px;
+    color:var(--terra);letter-spacing:.02em;
+    text-decoration:none;
+  }
+  .session-name:hover{text-decoration:underline;text-decoration-color:var(--terra);text-underline-offset:3px;}
+  .session-id{font-family:'Shippori Mincho',serif;font-size:12px;font-weight:700;color:var(--soft);letter-spacing:.06em;}
+
+  .card-head{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+
+  .badge-id{font-family:'Shippori Mincho',serif;font-size:11px;font-weight:700;
+    color:var(--soft);letter-spacing:.06em;}
+  .badge-prio{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;}
+  .card.aka .badge-prio{background:var(--aka-bg);color:var(--aka);}
+  .card.daidai .badge-prio{background:var(--daidai-bg);color:var(--daidai);}
+  .card.kihada .badge-prio{background:var(--kihada-bg);color:var(--kihada);}
+  .badge-proj{font-size:10.5px;color:var(--soft);padding:2px 7px;}
+
+  .dates{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:2px;font-size:10.5px;color:var(--soft);line-height:1.3;}
+  .dates .lab{font-size:9px;letter-spacing:.18em;color:var(--soft);text-transform:uppercase;}
+  .dates .d{font-family:'Shippori Mincho',serif;font-weight:700;font-size:13px;color:var(--ink);letter-spacing:0;}
+
+  .souki{
+    font-family:'Shippori Mincho',serif;font-weight:700;font-size:17px;line-height:1.4;
+    color:var(--ink);margin:12px 0 6px;letter-spacing:.01em;
+  }
+  .ima-tomatte{
+    font-size:13px;color:var(--soft);line-height:1.55;
+    border-left:2px solid var(--line);padding-left:10px;margin:8px 0 12px;
+  }
+
+  .meta-grid{
+    display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:8px 14px;
+    background:var(--paper);border-radius:8px;padding:10px 12px;
+    margin:8px 0 12px;font-size:11.5px;color:var(--soft);
+  }
+  .meta-grid .k{font-weight:700;color:var(--ink);font-size:10.5px;display:block;letter-spacing:.06em;margin-bottom:1px;text-transform:uppercase;}
+  .meta-grid .v{font-size:12px;color:var(--ink);}
+  .nou-pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;margin-right:3px;background:#fff;border:1px solid var(--line);}
+  .assignee-pill{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:700;}
+  .a-fa{background:rgba(63,79,122,.15);color:var(--fa);}
+  .a-fs{background:rgba(79,111,82,.15);color:var(--fs);}
+  .a-ba{background:rgba(189,138,44,.15);color:var(--ba);}
+  .a-bs{background:rgba(110,63,95,.15);color:var(--bs);}
+  .a-mits{background:rgba(181,86,47,.15);color:var(--aka);}
+  .mode-pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;}
+  .mode-mock{background:rgba(110,63,95,.15);color:var(--murasaki);font-weight:700;}
+
+  .kimeru-label{
+    font-size:10.5px;letter-spacing:.22em;color:var(--terra);font-weight:700;margin-bottom:6px;
+    text-transform:uppercase;
+  }
+  .kimeru-text{font-size:13.5px;color:var(--ink);margin-bottom:10px;line-height:1.5;}
+  .kimeru-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .btn{
+    padding:8px 14px;border:1.5px solid var(--line);border-radius:8px;
+    background:var(--paper);font-weight:700;font-size:13px;color:var(--ink);
+    transition:all .15s ease;
+  }
+  .btn:hover{border-color:var(--ink);background:#fff;}
+  .btn.go-a{border-color:var(--terra);color:var(--terra);}
+  .btn.go-a:hover{background:var(--terra);color:#fff;}
+  .btn.go-b{border-color:var(--green);color:var(--green);}
+  .btn.go-b:hover{background:var(--green);color:#fff;}
+  .btn.go-c{border-color:var(--kon);color:var(--kon);}
+  .btn.go-c:hover{background:var(--kon);color:#fff;}
+
+  .kimattara{
+    font-size:12.5px;color:var(--soft);line-height:1.55;
+    padding-top:10px;border-top:1px dashed var(--line);
+  }
+  .kimattara b{color:var(--ink);font-weight:700;}
+
+  .footer-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:10px;padding-top:10px;border-top:1px solid var(--line);
+    font-size:11.5px;color:var(--soft);
+  }
+  .chat-link{
+    display:inline-flex;align-items:center;gap:5px;
+    color:var(--terra);text-decoration:none;font-weight:700;
+    background:rgba(181,86,47,.08);padding:5px 11px;border-radius:999px;
+    transition:all .15s ease;
+  }
+  .chat-link:hover{background:var(--terra);color:#fff;}
+
+  .card.done{opacity:0;transform:scale(.96) translateY(-8px);pointer-events:none;}
+
+  .celebrate{
+    position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:'Shippori Mincho',serif;font-size:42px;font-weight:800;
+    color:var(--terra);pointer-events:none;opacity:0;
+    text-shadow:0 4px 24px rgba(0,0,0,.15);z-index:100;
+  }
+  .celebrate.show{animation:cel 1.2s ease-out forwards;}
+  @keyframes cel{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.5);}
+    20%{opacity:1;transform:translate(-50%,-50%) scale(1.1);}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1.4) translateY(-40px);}
+  }
+
+  .group{margin-top:8px;}
+  .group-h{
+    font-family:'Shippori Mincho',serif;font-weight:700;font-size:15px;
+    color:var(--soft);margin:18px 0 10px;letter-spacing:.08em;
+    display:flex;align-items:center;gap:10px;
+  }
+  .group-h::after{content:"";flex:1;height:1px;background:var(--line);}
+  .group-h .em{font-size:18px;}
+
+  @media (max-width:520px){
+    main{padding:14px 14px 96px;}
+    header.top{padding:12px 14px 12px;}
+    .tabs{margin:12px 14px 0;}
+    .souki{font-size:15.5px;}
+    .meta-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="top">
+  <div class="head-text">
+    <div class="kicker">YARI-NOKOSHI DAIBO v4</div>
+    <h1>やり残し台帳</h1>
+    <div class="head-meta">
+      <span><b id="today">2026-06-07</b> 土</span>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-filter="all">すべて</button>
+  <button class="tab" data-filter="aka">🔴 動線停止</button>
+  <button class="tab" data-filter="daidai">🟠 詰まり</button>
+  <button class="tab" data-filter="kihada">🟡 改善</button>
+  <button class="tab" data-filter="P0">P0</button>
+  <button class="tab" data-filter="P1">P1</button>
+  <button class="tab" data-filter="FA">🔵 FA</button>
+  <button class="tab" data-filter="BA">🟡 BA</button>
+  <button class="tab" data-filter="writer">writer</button>
+  <button class="tab" data-filter="engineer">engineer</button>
+</div>
+
+<main>
+  <div id="cards-host"></div>
+</main>
+
+</div>
+
+<div class="celebrate" id="celebrate">消化</div>
+
+<script>
+const data = [
+  {id:"019", w:"aka", prio:"P0", proj:"The Innovation", asg:"FA mits-persona-reviewer", asgClass:"a-fa",
+   hassei:"2026-06-03", kosin:"2026-06-07", star:"★律速・最上流",
+   nou:["🧠社長","🛒お客さん"], shutai:"🙋M①", mode:"通常", joryu:"★律速・最上流（集客動線の起点）", senryaku:"戦略10",
+   souki:"一番重要な無料体験セミナー：台本・LP実装を進めるか",
+   ima:"Mits判定3点はクリア（特典なし/名称=1人型起業のためのAIエージェント無料体験/開催=6/9火・10水・11木21:00/業種アドリブa）→実装フェーズへ",
+   kimeru:"（判定完了）残るは台本起こし・LP最終化・UTAGEシナリオ設計のAI実装",
+   btns:[{l:"実装着手GO",c:"go-a"},{l:"内容微調整",c:""}],
+   kimattara:"FA-leader→<b>mits-writer</b>（台本/LP）＋<b>scenario-plumber</b>（UTAGE 3夜予約）",
+   chat:"無料体験セミナー構築専用",
+   url:"https://app.notion.com/p/37400782d90a8159b77bcf31f9eaa208"},
+  {id:"002", w:"daidai", prio:"P1", proj:"運営", asg:"🟡BA mits-strategist", asgClass:"a-ba",
+   hassei:"2026-05-13", kosin:"2026-05-13", star:"最古",
+   nou:["🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"長瀬コラボ（戦略134外）",
+   souki:"19日経過の長瀬さん資料と今回コラボ：同じか別物か",
+   ima:"19日放置P0が未整理（最古）",
+   kimeru:"A=同一（P0統合クローズ）/ B=別物（個別対応）",
+   btns:[{l:"A 同一",c:"go-a"},{l:"B 別物",c:"go-b"}],
+   kimattara:"AIが<b>クローズ or タスク化</b>",
+   chat:"頭にあること大整理",
+   url:"https://app.notion.com/p/37200782d90a81b8a607f2b771f42830"},
+  {id:"005", w:"daidai", prio:"P1", proj:"The Innovation", asg:"🔵 mits-dohga", asgClass:"a-fa",
+   hassei:"2026-05-24", kosin:"2026-06-06", star:"episode-03公開済",
+   nou:["🛒お客さん","🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"戦略16/17（毎日動画→SKOOL）",
+   souki:"動画_deck-kit episode-02〜08 7本：3カード構成OKか",
+   ima:"残6本（episode-02/04/05/06/07/08）のDB登録・Skoolアップロード停止（※episode-03は2026-06-06公開・パス修正は完了済 commit 1ea246e）",
+   kimeru:"A=3カード構成OK / B=構成変更",
+   btns:[{l:"A 3カードOK",c:"go-a"},{l:"B 変更指示",c:"go-b"}],
+   kimattara:"AIが残6本の<b>DB登録（1c98f559…）＋Skoolアップロード/マッピング確定</b>",
+   chat:"毎日動画シナリオ",
+   url:"https://app.notion.com/p/35800782d90a814da041ee74a10034c0"},
+  {id:"010", w:"daidai", prio:"P1", proj:"The Innovation", asg:"🟡BA mits-strategist", asgClass:"a-ba",
+   hassei:"2026-06-01", kosin:"2026-06-01", star:"",
+   nou:["💰資本家","🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"ID:002（長瀬同一性判定）と連動", senryaku:"—",
+   souki:"長瀬さんコラボの値段と取り分：3点決める",
+   ima:"コラボ商品の設計・価格・収益分配が組めない",
+   kimeru:"①AI know価格 ②収益シェア比率 ③F1-08長瀬亜種価格",
+   btns:[{l:"3点入力する",c:"go-a"}],
+   kimattara:"<b>商品ページ・LP・収益シェア取り決め</b>構築",
+   chat:"頭にあること大整理",
+   url:"https://app.notion.com/p/37200782d90a81b8a607f2b771f42830"},
+  {id:"012", w:"daidai", prio:"P1", proj:"AI-MITS", asg:"🟡BA mits-strategist", asgClass:"a-ba",
+   hassei:"2026-06-01", kosin:"2026-06-03", star:"🧪自走モック済",
+   nou:["🧠社長"], shutai:"🙋M①", mode:"🧪自走モック", joryu:"—", senryaku:"AI-MITS TASKS Phase 2・3",
+   souki:"AI-MITS次フェーズ：どこから手をつけるか",
+   ima:"着手順未確定でPhase2・3が分解できない（フロント5画面モックは作った）",
+   kimeru:"着手順（Phase2/3どこから）＋別枝G1モック反応・G2 V2コピー",
+   btns:[{l:"着手順を示す",c:"go-a"}],
+   kimattara:"<b>BA-leader spawn→中粒度分解</b>（実装は別枝チップ）",
+   chat:"やること拾って整理",
+   url:"https://app.notion.com/p/37200782d90a81a6b551fb889a00d8e9"},
+  {id:"013", w:"daidai", prio:"P1", proj:"The Innovation", asg:"🔵 mits-writer", asgClass:"a-fa",
+   hassei:"2026-06-01", kosin:"2026-06-01", star:"",
+   nou:["🧠社長","🛒お客さん"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"F1-07/F1-08 LP声セクション",
+   souki:"棚原さんの声：二刀流にも使っていいか",
+   ima:"声の配置先未定でF1-07/二刀流LPの声セクションが埋まらない",
+   kimeru:"A=F1-07専用 / B=F1-07＋二刀流兼用",
+   btns:[{l:"A 専用",c:"go-a"},{l:"B 兼用",c:"go-b"}],
+   kimattara:"AIが<b>該当LPに配置</b>",
+   chat:"頭にあること大整理",
+   url:"https://app.notion.com/p/37200782d90a81b8a607f2b771f42830"},
+  {id:"018", w:"daidai", prio:"P1", proj:"The Innovation", asg:"🔵 mits-writer", asgClass:"a-fa",
+   hassei:"2026-06-03", kosin:"2026-06-03", star:"",
+   nou:["🧠社長","💰資本家","🛒お客さん"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"事業2-A 構築支援",
+   souki:"自分AI複製LP（AIグルコンBE商品化）：中身・価格・公開形態を決める",
+   ima:"商品設計未定でLP公開・ファネル・価格が組めない（高単価出口空席）",
+   kimeru:"①_wip→本番昇格 ②公開形態 A=一般公開LP/B=非公開提案書 ③商品設計（中身・価格・納品）",
+   btns:[{l:"3点入力する",c:"go-a"}],
+   kimattara:"<b>mits-engineer</b> がUTAGEファネル＋<b>mits-writer</b> がv8準拠再構成",
+   chat:"労働集約型サービスLP",
+   url:"https://app.notion.com/p/37400782d90a81dfb330c8ab64768590"},
+  {id:"017", w:"daidai", prio:"P1", proj:"運営", asg:"🟣 mits-engineer", asgClass:"a-bs",
+   hassei:"2026-06-03", kosin:"2026-06-03", star:"v3開通済",
+   nou:["🔧スタッフ"], shutai:"🙋M②", mode:"通常", joryu:"—（v3開通済）", senryaku:"秘書エンジン Capture基盤",
+   souki:"Notta録音→取り込み：たまってる18件を今一括かルーチン任せか",
+   ima:"Notta backlog約18子ページ未取込（手動コピペ頼み）",
+   kimeru:"backlogを今一括取込か／Routine任せか",
+   btns:[{l:"A 今一括",c:"go-a"},{l:"B Routine任せ",c:"go-b"}],
+   kimattara:"AIが一括取込＋<b>Routine許可ツール更新</b>（Read/Write追加）",
+   chat:"秘書エンジン設計",
+   url:"https://app.notion.com/p/37400782d90a813881e6fef1dffcfbf9"},
+  {id:"020", w:"daidai", prio:"P1", proj:"The Innovation", asg:"🔵 mits-writer", asgClass:"a-fa",
+   hassei:"2026-06-05", kosin:"2026-06-05", star:"",
+   nou:["🛒お客さん","🧠社長"], shutai:"🙋M②", mode:"通常", joryu:"—（F1-07集客最上流）", senryaku:"Max200→F1-07",
+   souki:"Max200コスパLP：プロフィール写真と太字量を決める",
+   ima:"Max200価値LP（UTAGE公開済）のビジュアル未完。F1-07集客最上流",
+   kimeru:"①プロフィール写真URL（Mitsしか持たない）②strong量 A=維持/B=減らす",
+   btns:[{l:"写真URL渡す",c:"go-a"},{l:"strong B 減",c:"go-b"}],
+   kimattara:"AIが<b>LP差込・調整してUTAGE反映</b>",
+   chat:"使用量コスパ・タイパ",
+   url:"https://app.notion.com/p/37600782d90a81438f80c964f959762b"},
+  {id:"015", w:"kihada", prio:"P2", proj:"AI-MITS", asg:"🟣 mits-engineer", asgClass:"a-bs",
+   hassei:"2026-05-16", kosin:"2026-05-16", star:"",
+   nou:["🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"—（🗂整理術）",
+   souki:"Difyログ整理DB『ボケ！動くな！』：続けるか廃止か",
+   ima:"DB構成変更の全作業（リネーム・46件入替・本文）が停止",
+   kimeru:"A=継続（本文の中身を指定）/ B=廃止",
+   btns:[{l:"A 継続",c:"go-a"},{l:"B 廃止",c:"go-b"}],
+   kimattara:"A なら<b>参謀セッションで直接実行</b>",
+   chat:"Dify ログnotion整理",
+   url:"https://app.notion.com/p/36200782d90a81499b7bee43ca2de923"},
+  {id:"008", w:"kihada", prio:"P2", proj:"運営", asg:"🟣 mits-engineer", asgClass:"a-bs",
+   hassei:"2026-05-28", kosin:"2026-05-28", star:"",
+   nou:["🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"—（Obsidianセカンドブレイン鮮度）",
+   souki:"MyContext自動更新スクリプト：作るか別案か",
+   ima:"MyContext.md が古いまま・Obsidian鮮度低下",
+   kimeru:"A=作る / B=別アプローチ",
+   btns:[{l:"A 作る",c:"go-a"},{l:"B 別案",c:"go-b"}],
+   kimattara:"AIが即日 <b>rebuild_mycontext_index.py</b> 作成〜crontab〜本適用",
+   chat:"obsidian 蒸留ルール修正",
+   url:"https://app.notion.com/p/36d00782d90a8163aa60d4b0191d7bdc"},
+  {id:"016", w:"kihada", prio:"P2", proj:"The Innovation", asg:"🔵 mits-writer", asgClass:"a-fa",
+   hassei:"2026-06-02", kosin:"2026-06-02", star:"",
+   nou:["🛒お客さん","🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"—", senryaku:"—（LP視認性デザイン）",
+   souki:"F1-07/F1-08でやった黄色マーカー：他LPに広げるか",
+   ima:"横展開しなければ実害なし（低優先）",
+   kimeru:"A=横展開 / B=F1-07/F1-08限定 / C=都度案件毎",
+   btns:[{l:"A 広げる",c:"go-a"},{l:"B 限定",c:"go-b"},{l:"C 都度",c:"go-c"}],
+   kimattara:"A なら<b>対象LP決定して一括反映</b>",
+   chat:"0531_デザイン整理",
+   url:"https://app.notion.com/p/37200782d90a81a082d0c7614971cd46"},
+  {id:"021", w:"kihada", prio:"P3", proj:"運営", asg:"🟣 mits-engineer", asgClass:"a-bs",
+   hassei:"2026-06-05", kosin:"2026-06-05", star:"保留",
+   nou:["🛒お客さん","🧠社長"], shutai:"🙋M①", mode:"通常", joryu:"—（保留）", senryaku:"—（LPテンプレ正本）",
+   souki:"gold_cardテンプレ：3要素を足すか足さないか",
+   ima:"保留中で実害なし（テンプレ正本の完成度）",
+   kimeru:"A=gold_cardに3要素追加 / B=ミニマル維持",
+   btns:[{l:"A 足す",c:"go-a"},{l:"B 足さない",c:"go-b"}],
+   kimattara:"A なら AI が<b>追加実装</b>",
+   chat:"（Notion保存なし）",
+   url:""}
+];
+
+const groupTitle = {aka: "🔴 主要動線が止まっている", daidai: "🟠 後続が詰まっている", kihada: "🟡 改善が止まっている"};
+
+function render(filter='all'){
+  const host = document.getElementById('cards-host');
+  host.innerHTML = '';
+  const groups = ['aka','daidai','kihada'];
+  groups.forEach(g=>{
+    let items = data.filter(d=>d.w===g);
+    if(filter!=='all'){
+      if(filter==='aka'||filter==='daidai'||filter==='kihada'){ if(filter!==g) return; }
+      else if(filter==='P0'||filter==='P1'||filter==='P2'||filter==='P3'){ items = items.filter(d=>d.prio===filter); }
+      else if(filter==='FA'){ items = items.filter(d=>d.asg.includes('FA')||d.asg.includes('persona-reviewer')); }
+      else if(filter==='BA'){ items = items.filter(d=>d.asg.includes('BA')||d.asg.includes('strategist')); }
+      else if(filter==='writer'){ items = items.filter(d=>d.asg.includes('writer')); }
+      else if(filter==='engineer'){ items = items.filter(d=>d.asg.includes('engineer')); }
+    }
+    if(items.length===0) return;
+    items.sort((a,b)=> a.kosin < b.kosin ? -1 : a.kosin > b.kosin ? 1 : 0); // 最終更新日 古い順
+    const sec = document.createElement('div');
+    sec.className = 'group';
+    sec.innerHTML = `<div class="group-h"><span class="em">${groupTitle[g].slice(0,2)}</span>${groupTitle[g].slice(2)}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'cards';
+    items.forEach(d=>{
+      const card = document.createElement('article');
+      card.className = `card ${d.w}`;
+      const btnsHTML = d.btns.map(b=>`<button class="btn ${b.c}" onclick="done(this)">${b.l}</button>`).join('');
+      const chatHTML = d.url
+        ? `<a class="chat-link" href="${d.url}" target="_blank">▶ ${d.chat}</a>`
+        : `<span style="font-size:11px;color:var(--soft);">${d.chat}</span>`;
+      const nouHTML = d.nou.map(n=>`<span class="nou-pill">${n}</span>`).join('');
+      const modePillHTML = d.mode === '🧪自走モック' ? `<span class="mode-pill mode-mock">${d.mode}</span>` : '';
+      const sessionNameHTML = d.url
+        ? `<a class="session-name" href="${d.url}" target="_blank">${d.chat}</a>`
+        : `<span class="session-name" style="color:var(--soft);">${d.chat}</span>`;
+      card.innerHTML = `
+        <div class="session-head">
+          ${sessionNameHTML}
+          <span class="session-id">ID:${d.id}</span>
+        </div>
+        <div class="card-head">
+          <span class="badge-prio">${d.prio}</span>
+          <span class="badge-proj">${d.proj}</span>
+          ${d.star ? `<span style="font-size:10.5px;color:var(--terra);font-weight:700;">${d.star}</span>` : ''}
+          ${modePillHTML}
+          <div class="dates">
+            <div><span class="lab">発生</span> <span class="d">${d.hassei}</span></div>
+            <div><span class="lab">最終更新</span> <span class="d">${d.kosin}</span></div>
+          </div>
+        </div>
+        <div class="souki">${d.souki}</div>
+        <div class="ima-tomatte">${d.ima}</div>
+        <div class="meta-grid">
+          <div><span class="k">担当</span><span class="v"><span class="assignee-pill ${d.asgClass}">${d.asg}</span></span></div>
+          <div><span class="k">実行主体</span><span class="v">${d.shutai}</span></div>
+          <div><span class="k">脳</span><span class="v">${nouHTML}</span></div>
+          <div><span class="k">上流</span><span class="v">${d.joryu}</span></div>
+          <div><span class="k">戦略</span><span class="v">${d.senryaku}</span></div>
+        </div>
+        <div class="kimeru-label">Mits が 決 め る</div>
+        <div class="kimeru-text">${d.kimeru}</div>
+        <div class="kimeru-btns">${btnsHTML}</div>
+        <div class="kimattara">決まったら：${d.kimattara}</div>
+        <div class="footer-row">
+          <span>該当チャット</span>
+          ${chatHTML}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    host.appendChild(sec);
+  });
+}
+
+function done(btn){
+  const card = btn.closest('.card');
+  card.classList.add('done');
+  showCelebrate();
+  setTimeout(()=>{card.remove();}, 350);
+}
+function showCelebrate(){
+  const el = document.getElementById('celebrate');
+  const msgs = ['消化','一件落着','ありがとう','お見事','進んだ'];
+  el.textContent = msgs[Math.floor(Math.random()*msgs.length)];
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    render(t.dataset.filter);
+  });
+});
+render('all');
+</script>
+</body>
+</html>
